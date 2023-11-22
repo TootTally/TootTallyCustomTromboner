@@ -2,12 +2,14 @@
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TootTallyCore.Utils.TootTallyModules;
 using TootTallySettings;
 using UnityEngine;
 
-namespace TootTally.ModuleTemplate
+namespace TootTallyCustomTromboner
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("TootTallyCore", BepInDependency.DependencyFlags.HardDependency)]
@@ -16,14 +18,16 @@ namespace TootTally.ModuleTemplate
     {
         public static Plugin Instance;
 
-        private const string CONFIG_NAME = "ModuleTemplate.cfg";
+        private const string CONFIG_NAME = "CustomBoner.cfg";
+        private const string BONER_CONFIG_FIELD = "CustomBoner";
+        public const string DEFAULT_BONER = "None";
         public Options option;
         private Harmony _harmony;
         public ConfigEntry<bool> ModuleConfigEnabled { get; set; }
         public bool IsConfigInitialized { get; set; }
 
         //Change this name to whatever you want
-        public string Name { get => PluginInfo.PLUGIN_NAME; set => Name = value; }
+        public string Name { get => "Custom Tromboner"; set => Name = value; }
 
         public static TootTallySettingPage settingPage;
 
@@ -42,7 +46,7 @@ namespace TootTally.ModuleTemplate
         private void TryInitialize()
         {
             // Bind to the TTModules Config for TootTally
-            ModuleConfigEnabled = TootTallyCore.Plugin.Instance.Config.Bind("Modules", "<insert module name here>", true, "<insert module description here>");
+            ModuleConfigEnabled = TootTallyCore.Plugin.Instance.Config.Bind("Modules", "Custom Tromboner", true, "Change the appearance of your tromboner");
             TootTallyModuleManager.AddModule(this);
             TootTallySettings.Plugin.Instance.AddModuleToSettingPage(this);
         }
@@ -53,19 +57,17 @@ namespace TootTally.ModuleTemplate
             ConfigFile config = new ConfigFile(configPath + CONFIG_NAME, true);
             option = new Options()
             {
-                // Set your config here by binding them to the related ConfigEntry in your Options class
-                // Example:
-                // Unlimited = config.Bind(CONFIG_FIELD, "Unlimited", DEFAULT_UNLISETTING)
+                BonerName = config.Bind(BONER_CONFIG_FIELD, nameof(option.BonerName), DEFAULT_BONER),
             };
 
-            settingPage = TootTallySettingsManager.AddNewPage("ModulePageName", "HeaderText", 40f, new Color(0,0,0,0));
-            if (settingPage != null) {
-                // Use TootTallySettingPage functions to add your objects to TootTallySetting
-                // Example:
-                // page.AddToggle(name, option.Unlimited);
-            }
+            settingPage = TootTallySettingsManager.AddNewPage("Custom Tromboner", "Custom Tromboner", 40f, new Color(0, 0, 0, 0));
+            settingPage.AddLabel("BonerLabel", "Custom Tromboners", 24, TMPro.FontStyles.Normal, TMPro.TextAlignmentOptions.BottomLeft);
+            CustomTromboner.LoadAssetBundles();
+            List<string> folderNames = new() { DEFAULT_BONER };
+            folderNames.AddRange(CustomTromboner.GetBonerNames);
+            settingPage.AddDropdown($"BonerDropdown", option.BonerName, folderNames.ToArray());
 
-            _harmony.PatchAll(typeof(ModuleTemplatePatches));
+            _harmony.PatchAll(typeof(CustomTromboner.CustomTrombonerPatches));
             LogInfo($"Module loaded!");
         }
 
@@ -76,16 +78,10 @@ namespace TootTally.ModuleTemplate
             LogInfo($"Module unloaded!");
         }
 
-        public static class ModuleTemplatePatches
-        {
-            // Apply your Trombone Champ patches here
-        }
 
         public class Options
         {
-            // Fill this class up with ConfigEntry objects that define your configs
-            // Example:
-            // public ConfigEntry<bool> Unlimited { get; set; }
+            public ConfigEntry<string> BonerName { get; set; }
         }
     }
 }
