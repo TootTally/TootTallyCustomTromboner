@@ -5,6 +5,7 @@ using HarmonyLib;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TootTallyCore.Utils.Helpers;
 using TootTallyCore.Utils.TootTallyModules;
 using TootTallySettings;
 using UnityEngine;
@@ -59,6 +60,10 @@ namespace TootTallyCustomTromboner
             {
                 BonerName = config.Bind(BONER_CONFIG_FIELD, nameof(option.BonerName), DEFAULT_BONER),
             };
+
+            string sourceFolderPath = Path.Combine(Path.GetDirectoryName(Plugin.Instance.Info.Location), CustomTromboner.CUSTOM_TROMBONER_FOLDER);
+            string targetFolderPath = Path.Combine(Paths.BepInExRootPath, CustomTromboner.CUSTOM_TROMBONER_FOLDER);
+            FileHelper.TryMigrateFolder(sourceFolderPath, targetFolderPath, true);
 
             settingPage = TootTallySettingsManager.AddNewPage("Custom Tromboner", "Custom Tromboner", 40f, new Color(0, 0, 0, 0));
             settingPage.AddLabel("BonerLabel", "Custom Tromboners", 24, TMPro.FontStyles.Normal, TMPro.TextAlignmentOptions.BottomLeft);

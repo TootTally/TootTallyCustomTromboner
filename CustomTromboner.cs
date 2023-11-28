@@ -18,8 +18,6 @@ namespace TootTallyCustomTromboner
 
         private static Dictionary<string, AssetBundle> _bonerDict;
         private static AssetBundle _currentBundle;
-        private static TootTallySettingLabel _label;
-        private static TootTallySettingDropdown _dropdown;
 
         public static string[] GetBonerNames => _bonerDict.Keys.ToArray();
 
@@ -34,7 +32,7 @@ namespace TootTallyCustomTromboner
             _bonerDict = new Dictionary<string, AssetBundle>();
 
             var path = Path.Combine(Paths.BepInExRootPath, CUSTOM_TROMBONER_FOLDER);
-            var files = FileHelper.GetAllBonerFilesFromDirectory(path);
+            var files = TrombonerFileHelper.GetAllBonerFilesFromDirectory(path);
             files.ForEach(AddToAssetBundle);
             Plugin.LogInfo("Custom Tromboners Loaded.");
         }
@@ -44,7 +42,7 @@ namespace TootTallyCustomTromboner
             Plugin.LogInfo($"Would add {file.Name} using {file.FullName}");
             try
             {
-                _bonerDict.Add(file.Name.Replace(FileHelper.BONER_FILE_EXT, ""), AssetBundle.LoadFromFile(file.FullName));
+                _bonerDict.Add(file.Name.Replace(TrombonerFileHelper.BONER_FILE_EXT, ""), AssetBundle.LoadFromFile(file.FullName));
             }
             catch (Exception ex)
             {
@@ -96,7 +94,7 @@ namespace TootTallyCustomTromboner
             public static void OnHomeControllerStart()
             {
                 var path = Path.Combine(Paths.BepInExRootPath, CUSTOM_TROMBONER_FOLDER);
-                if (_bonerDict == null || Directory.GetFiles(path).Any(x => !_bonerDict.ContainsKey(x.Replace(FileHelper.BONER_FILE_EXT, ""))))
+                if (_bonerDict == null || Directory.GetFiles(path).Any(x => !_bonerDict.ContainsKey(x.Replace(TrombonerFileHelper.BONER_FILE_EXT, ""))))
                     LoadAssetBundles();
                 ResolveCurrentBundle();
             }

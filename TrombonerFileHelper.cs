@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TootTallyCustomTromboner
 {
-    public static class FileHelper
+    public static class TrombonerFileHelper
     {
         public const string BONER_FILE_EXT = ".boner";
         public static FileInfo[] GetFilesFromDirectory(string directory) => GetOrCreateDirectory(directory).GetFiles();
