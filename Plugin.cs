@@ -72,6 +72,8 @@ namespace TootTallyCustomTromboner
             folderNames.AddRange(CustomTromboner.GetBonerNames);
             settingPage.AddDropdown($"BonerDropdown", option.BonerName, folderNames.ToArray());
 
+            TootTallySettings.Plugin.TryAddThunderstoreIconToPageButton(Instance.Info.Location, Name, settingPage);
+
             _harmony.PatchAll(typeof(CustomTromboner.CustomTrombonerPatches));
             LogInfo($"Module loaded!");
         }
