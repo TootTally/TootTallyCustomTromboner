@@ -114,17 +114,9 @@ namespace TootTallyCustomTromboner
                     _customPuppet.transform.localPosition = new Vector3(0.7f, -0.4f, 1.3f);
 
                     if (!_customPuppet.TryGetComponent(out _customPuppetAnimator))
-                    {
                         Plugin.LogInfo("No animator found in custom puppet.");
-                    }
                     else
-                    {
-                        _customPuppetAnimator.SetBool("Tooting", false);
-                        _customPuppetAnimator.SetBool("OutOfBreath", false);
-                        _customPuppetAnimator.SetFloat("PointerY", 0);
-                        _customPuppetAnimator.SetFloat("Tempo", __instance.tempo);
-                        _customPuppetAnimator.SetFloat("AnimationSpeed", __instance.tempo / 120f);
-                    }
+                        _customPuppetAnimator.enabled = false;
                 }
             }
 
@@ -153,9 +145,28 @@ namespace TootTallyCustomTromboner
                 _customPuppetAnimator.SetFloat("PointerY", __instance.pointer.transform.localPosition.y);
 
                 if (_lastOutOfBreath != __instance.outofbreath)
+                {
                     _customPuppetAnimator.SetBool("OutOfBreath", __instance.outofbreath);
+                    _customPuppetAnimator.enabled = false;
+                }
 
                 _lastOutOfBreath = __instance.outofbreath;
+            }
+
+            [HarmonyPatch(typeof(HumanPuppetController), nameof(HumanPuppetController.startPuppetBob))]
+            [HarmonyPostfix]
+            public static void ActivateCustomPuppetAnimation()
+            {
+                if (_customPuppetAnimator != null)
+                    _customPuppetAnimator.enabled = true;
+            }
+
+            [HarmonyPatch(typeof(HumanPuppetController), nameof(HumanPuppetController.playCameraRotationTween))]
+            [HarmonyPostfix]
+            public static void SetCustomAnimationActive(bool play)
+            {
+                if (_customPuppetAnimator != null)
+                    _customPuppetAnimator.enabled = play;
             }
 
             [HarmonyPatch(typeof(GameController), nameof(GameController.Start))]
@@ -165,6 +176,16 @@ namespace TootTallyCustomTromboner
                 if (_customPuppetPrefab != null)
                 {
                     __instance.puppet_human.transform.localScale = Vector3.zero;
+                    if (_customPuppetAnimator != null)
+                    {
+                        _customPuppetAnimator.SetBool("Tooting", false);
+                        _customPuppetAnimator.SetBool("OutOfBreath", false);
+                        _customPuppetAnimator.SetFloat("PointerY", 0);
+                        var tempo = __instance.tempo * (GlobalVariables.turbomode ? 2 : GlobalVariables.practicemode);
+                        _customPuppetAnimator.SetFloat("Tempo", tempo);
+                        _customPuppetAnimator.SetFloat("AnimationSpeed", tempo / 120f);
+                    }
+
                     return;
                 }
                 if (_currentBundle == null)
