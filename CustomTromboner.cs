@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using TootTallyCore.Utils.Helpers;
 using TootTallySettings.TootTallySettingsObjects;
 using UnityEngine;
+using static UnityEngine.UIElements.StyleVariableResolver;
 
 namespace TootTallyCustomTromboner
 {
@@ -82,6 +84,7 @@ namespace TootTallyCustomTromboner
         public static class CustomTrombonerPatches
         {
             public static GameObject _customPuppet, _customPuppetPrefab;
+            public static Animator _customPuppetAnimator;
             [HarmonyPatch(typeof(HomeController), nameof(HomeController.tryToSaveSettings))]
             [HarmonyPostfix]
             public static void OnSettingsChange()
@@ -109,7 +112,50 @@ namespace TootTallyCustomTromboner
                 {
                     _customPuppet = GameObject.Instantiate(_customPuppetPrefab, __instance.modelparent.transform);
                     _customPuppet.transform.localPosition = new Vector3(0.7f, -0.4f, 1.3f);
+
+                    if (!_customPuppet.TryGetComponent(out _customPuppetAnimator))
+                    {
+                        Plugin.LogInfo("No animator found in custom puppet.");
+                    }
+                    else
+                    {
+                        _customPuppetAnimator.SetBool("Tooting", false);
+                        _customPuppetAnimator.SetBool("OutOfBreath", false);
+                        _customPuppetAnimator.SetFloat("PointerY", 0);
+                        _customPuppetAnimator.SetFloat("Tempo", __instance.tempo);
+                        _customPuppetAnimator.SetFloat("AnimationSpeed", __instance.tempo / 120f);
+                    }
                 }
+            }
+
+            private static bool _lastTooting;
+
+            [HarmonyPatch(typeof(GameController), nameof(GameController.isNoteButtonPressed))]
+            [HarmonyPostfix]
+            public static void OnTootingEvent(ref bool __result)
+            {
+                if (_customPuppetAnimator == null) return;
+
+                if (_lastTooting != __result)
+                    _customPuppetAnimator.SetBool("Tooting", __result);
+
+                _lastTooting = __result;
+            }
+
+            private static bool _lastOutOfBreath;
+
+            [HarmonyPatch(typeof(GameController), nameof(GameController.Update))]
+            [HarmonyPostfix]
+            public static void UpdatePointerYEvent(GameController __instance)
+            {
+                if (_customPuppetAnimator == null) return;
+
+                _customPuppetAnimator.SetFloat("PointerY", __instance.pointer.transform.localPosition.y);
+
+                if (_lastOutOfBreath != __instance.outofbreath)
+                    _customPuppetAnimator.SetBool("OutOfBreath", __instance.outofbreath);
+
+                _lastOutOfBreath = __instance.outofbreath;
             }
 
             [HarmonyPatch(typeof(GameController), nameof(GameController.Start))]

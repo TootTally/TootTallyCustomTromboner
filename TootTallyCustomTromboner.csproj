@@ -8,7 +8,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>latest</LangVersion>
 		<TromboneChampDir>E:\SteamLibrary\steamapps\common\TromboneChamp</TromboneChampDir>
-		<TromboneTootDir>C:\Users\Sabz\AppData\Roaming\r2modmanPlus-local\TromboneChamp\profiles\TTCoreTesting</TromboneTootDir>
+		<TromboneTootDir>C:\Users\Sabz\AppData\Roaming\r2modmanPlus-local\TromboneChamp\profiles\default</TromboneTootDir>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -27,17 +27,14 @@
 
 	<ItemGroup>
 		<Reference Include="TootTallyCore">
-			<HintPath>$(TromboneTootDir)\BepInEx\plugins\TootTally-Core\TootTallyCore.dll</HintPath>
+			<HintPath>$(TromboneTootDir)\BepInEx\plugins\TootTally-TootTallyCore\TootTallyCore.dll</HintPath>
 		</Reference>
-	</ItemGroup>
-
-	<ItemGroup>
 		<Reference Include="TootTallySettings">
-			<HintPath>$(TromboneTootDir)\BepInEx\plugins\TootTally-Settings\TootTallySettings.dll</HintPath>
+			<HintPath>$(TromboneTootDir)\BepInEx\plugins\TootTally-TootTallySettings\TootTallySettings.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TromboneTootDir)\BepInEx\plugins\TootTally-CustomTromboner" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TromboneTootDir)\BepInEx\plugins\TootTally-TootTallyCustomTromboner" />
 	</Target>
 </Project>
