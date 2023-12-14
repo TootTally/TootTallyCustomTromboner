@@ -142,7 +142,8 @@ namespace TootTallyCustomTromboner
             {
                 if (_customPuppetAnimator == null) return;
 
-                _customPuppetAnimator.SetFloat("PointerY", __instance.pointer.transform.localPosition.y);
+                var normPointerY = (__instance.pointer.transform.localPosition.y + 180) / 360f;
+                _customPuppetAnimator.SetFloat("PointerY", normPointerY);
 
                 if (_lastOutOfBreath != __instance.outofbreath)
                 {
@@ -180,7 +181,7 @@ namespace TootTallyCustomTromboner
                     {
                         _customPuppetAnimator.SetBool("Tooting", false);
                         _customPuppetAnimator.SetBool("OutOfBreath", false);
-                        _customPuppetAnimator.SetFloat("PointerY", 0);
+                        _customPuppetAnimator.SetFloat("PointerY", .5f);
                         var tempo = __instance.tempo * (GlobalVariables.turbomode ? 2 : GlobalVariables.practicemode);
                         _customPuppetAnimator.SetFloat("Tempo", tempo);
                         _customPuppetAnimator.SetFloat("AnimationSpeed", tempo / 120f);
