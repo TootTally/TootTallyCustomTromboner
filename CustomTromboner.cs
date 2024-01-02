@@ -148,7 +148,6 @@ namespace TootTallyCustomTromboner
                 if (_lastOutOfBreath != __instance.outofbreath)
                 {
                     _customPuppetAnimator.SetBool("OutOfBreath", __instance.outofbreath);
-                    _customPuppetAnimator.enabled = false;
                 }
 
                 _lastOutOfBreath = __instance.outofbreath;
@@ -176,7 +175,7 @@ namespace TootTallyCustomTromboner
             {
                 if (_customPuppetPrefab != null)
                 {
-                    __instance.puppet_human.transform.localScale = Vector3.zero;
+					__instance.puppet_human.SetActive(false);
                     if (_customPuppetAnimator != null)
                     {
                         _customPuppetAnimator.SetBool("Tooting", false);
