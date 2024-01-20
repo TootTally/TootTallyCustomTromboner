@@ -4,10 +4,11 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TootTallyCore.Utils.Helpers;
 using TootTallyCore.Utils.TootTallyModules;
+using TootTallyCore.Utils.TootTallyNotifs;
 using TootTallySettings;
+using TootTallySettings.TootTallySettingsObjects;
 using UnityEngine;
 
 namespace TootTallyCustomTromboner
@@ -31,6 +32,7 @@ namespace TootTallyCustomTromboner
         public string Name { get => "Custom Tromboner"; set => Name = value; }
 
         public static TootTallySettingPage settingPage;
+        public static TootTallySettingDropdown dropdown;
 
         public static void LogInfo(string msg) => Instance.Logger.LogInfo(msg);
         public static void LogError(string msg) => Instance.Logger.LogError(msg);
@@ -70,7 +72,14 @@ namespace TootTallyCustomTromboner
             CustomTromboner.LoadAssetBundles();
             List<string> folderNames = new() { DEFAULT_BONER };
             folderNames.AddRange(CustomTromboner.GetBonerNames);
-            settingPage.AddDropdown($"BonerDropdown", option.BonerName, folderNames.ToArray());
+            dropdown = settingPage.AddDropdown($"BonerDropdown", Instance.option.BonerName, folderNames.ToArray());
+            settingPage.AddButton("Reload Tromboners", delegate
+            {
+                dropdown.dropdown.ClearOptions();
+                dropdown.AddOptions(DEFAULT_BONER);
+                CustomTromboner.LoadAssetBundles();
+                TootTallyNotifManager.DisplayNotif("Reloaded tromboners.");
+            });
 
             TootTallySettings.Plugin.TryAddThunderstoreIconToPageButton(Instance.Info.Location, Name, settingPage);
 

@@ -1,16 +1,10 @@
 ﻿using BepInEx;
 using HarmonyLib;
-using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TootTallyCore.Utils.Helpers;
-using TootTallySettings.TootTallySettingsObjects;
 using UnityEngine;
-using static UnityEngine.UIElements.StyleVariableResolver;
 
 namespace TootTallyCustomTromboner
 {
@@ -25,7 +19,7 @@ namespace TootTallyCustomTromboner
 
         public static void LoadAssetBundles()
         {
-            Plugin.LogInfo("New Custom Tromboner detected, reloading CustomTromboners...");
+            Plugin.LogInfo("Loading CustomTromboners...");
 
             if (_bonerDict != null)
                 foreach (string key in _bonerDict.Keys)
@@ -35,22 +29,27 @@ namespace TootTallyCustomTromboner
 
             var path = Path.Combine(Paths.BepInExRootPath, CUSTOM_TROMBONER_FOLDER);
             var files = TrombonerFileHelper.GetAllBonerFilesFromDirectory(path);
-            files.ForEach(AddToAssetBundle);
+            files.ForEach(file =>
+            {
+                Plugin.Instance.StartCoroutine(LoadAssetBundleAsync(file.FullName, bundle =>
+                {
+                    var name = file.Name.Replace(TrombonerFileHelper.BONER_FILE_EXT, "");
+                    _bonerDict.Add(name, bundle);
+                    Plugin.dropdown.AddOptions(name);
+                    Plugin.LogInfo($"{name} boner added.");
+                }));
+            });
             Plugin.LogInfo("Custom Tromboners Loaded.");
         }
 
-        public static void AddToAssetBundle(FileInfo file)
+        public static IEnumerator<AssetBundleCreateRequest> LoadAssetBundleAsync(string path, Action<AssetBundle> callback)
         {
-            Plugin.LogInfo($"Would add {file.Name} using {file.FullName}");
-            try
-            {
-                _bonerDict.Add(file.Name.Replace(TrombonerFileHelper.BONER_FILE_EXT, ""), AssetBundle.LoadFromFile(file.FullName));
-            }
-            catch (Exception ex)
-            {
-                Plugin.LogError(ex.Message);
-                Plugin.LogError(ex.StackTrace);
-            }
+            var bundleRequest = AssetBundle.LoadFromFileAsync(path);
+            yield return bundleRequest;
+            if (bundleRequest != null)
+                callback(bundleRequest.assetBundle);
+            else
+                Plugin.LogInfo($"Failed to load {path} boner.");
         }
 
         public static void ResolveCurrentBundle()
@@ -59,7 +58,6 @@ namespace TootTallyCustomTromboner
             if (bonerName != Plugin.DEFAULT_BONER && _bonerDict.ContainsKey(bonerName))
             {
                 _currentBundle = _bonerDict[bonerName];
-                _currentBundle.GetAllAssetNames().ToList().ForEach(Plugin.LogInfo);
                 Plugin.LogInfo($"Boner bundle {_currentBundle.name} loaded.");
             }
             else if (_currentBundle != null && bonerName == Plugin.DEFAULT_BONER)
@@ -69,8 +67,8 @@ namespace TootTallyCustomTromboner
             }
         }
 
-        public static Material GetMaterial(string name) => _currentBundle.LoadAsset<Material>(name);
-        public static Texture GetTexture(string name) => _currentBundle.LoadAsset<Texture>(name);
+        public static Material GetMaterial(string name) => _currentBundle?.LoadAsset<Material>(name);
+        public static Texture GetTexture(string name) => _currentBundle?.LoadAsset<Texture>(name);
 
         public static int GetPuppetIDFromName(string PuppetName) => PuppetName.ToLower().Replace(" ", "") switch
         {
@@ -85,28 +83,17 @@ namespace TootTallyCustomTromboner
         {
             public static GameObject _customPuppet, _customPuppetPrefab;
             public static Animator _customPuppetAnimator;
-            [HarmonyPatch(typeof(HomeController), nameof(HomeController.tryToSaveSettings))]
-            [HarmonyPostfix]
-            public static void OnSettingsChange()
-            {
-                ResolveCurrentBundle();
-            }
-
-            [HarmonyPatch(typeof(HomeController), nameof(HomeController.Start))]
-            [HarmonyPostfix]
-            public static void OnHomeControllerStart()
-            {
-                var path = Path.Combine(Paths.BepInExRootPath, CUSTOM_TROMBONER_FOLDER);
-                if (_bonerDict == null || Directory.GetFiles(path).Any(x => !_bonerDict.ContainsKey(x.Replace(TrombonerFileHelper.BONER_FILE_EXT, ""))))
-                    LoadAssetBundles();
-                ResolveCurrentBundle();
-            }
 
             [HarmonyPatch(typeof(GameController), nameof(GameController.Start))]
             [HarmonyPrefix]
             public static void SetPuppetIDOnStartPrefix(GameController __instance)
             {
-                if (_currentBundle == null) return;
+                if (Plugin.Instance.option.BonerName.Value == Plugin.DEFAULT_BONER) return;
+                else if (_currentBundle == null)
+                    ResolveCurrentBundle(); //Try to load bundle
+
+                if (_currentBundle == null) return; //If fails to load
+
                 _customPuppetPrefab = _currentBundle.LoadAsset<GameObject>("puppet.prefab");
                 if (_customPuppetPrefab != null)
                 {
@@ -144,11 +131,10 @@ namespace TootTallyCustomTromboner
 
                 var normPointerY = (__instance.pointer.transform.localPosition.y + 180) / 360f;
                 _customPuppetAnimator.SetFloat("PointerY", normPointerY);
+                _customPuppetAnimator.SetFloat("Breathing", __instance.breathcounter);
 
                 if (_lastOutOfBreath != __instance.outofbreath)
-                {
                     _customPuppetAnimator.SetBool("OutOfBreath", __instance.outofbreath);
-                }
 
                 _lastOutOfBreath = __instance.outofbreath;
             }
@@ -175,7 +161,7 @@ namespace TootTallyCustomTromboner
             {
                 if (_customPuppetPrefab != null)
                 {
-					__instance.puppet_human.SetActive(false);
+                    __instance.puppet_human.SetActive(false);
                     if (_customPuppetAnimator != null)
                     {
                         _customPuppetAnimator.SetBool("Tooting", false);
