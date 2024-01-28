@@ -46,7 +46,7 @@ namespace TootTallyCustomTromboner
         {
             var bundleRequest = AssetBundle.LoadFromFileAsync(path);
             yield return bundleRequest;
-            if (bundleRequest != null)
+            if (bundleRequest.assetBundle != null)
                 callback(bundleRequest.assetBundle);
             else
                 Plugin.LogInfo($"Failed to load {path} boner.");
@@ -55,10 +55,9 @@ namespace TootTallyCustomTromboner
         public static void ResolveCurrentBundle()
         {
             var bonerName = Plugin.Instance.option.BonerName.Value;
-            if (bonerName != Plugin.DEFAULT_BONER && _bonerDict.ContainsKey(bonerName))
+            if (bonerName != Plugin.DEFAULT_BONER && _bonerDict != null && _bonerDict.TryGetValue(bonerName, out _currentBundle))
             {
-                _currentBundle = _bonerDict[bonerName];
-                Plugin.LogInfo($"Boner bundle {_currentBundle.name} loaded.");
+                Plugin.LogInfo($"Boner bundle {bonerName} loaded.");
             }
             else if (_currentBundle != null && bonerName == Plugin.DEFAULT_BONER)
             {
